@@ -6,7 +6,7 @@ pygame.init()
 # Screen dimensions and setup
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Space Impact")
+pygame.display.set_caption("Space Odyssey")
 
 clock = pygame.time.Clock()
 
@@ -38,6 +38,8 @@ bullet_img = pygame.image.load("c:/xampp/htdocs/space_impact/spaceMissiles_040.p
 bullet_img = pygame.transform.scale(bullet_img, (20, 10))
 boss_bullet_img = pygame.image.load("c:/xampp/htdocs/space_impact/laser.png").convert_alpha()
 boss_bullet_img = pygame.transform.scale(boss_bullet_img, (100, 10))  # Adjust the size as needed
+spaceship_img = pygame.image.load("c:/xampp/htdocs/space_impact/spaceShips_004.png").convert_alpha()
+spaceship_img = pygame.transform.scale(spaceship_img, (60, 60))
 
 # Boss GIF frames for both bosses
 boss_frames_level1 = [pygame.image.load("c:/xampp/htdocs/space_impact/alien.gif").convert_alpha() for _ in range(4)]
@@ -140,8 +142,43 @@ def show_level_clear():
     clear_text = font.render(f"Level {level} Cleared!", True, WHITE)
     screen.blit(clear_text, (WIDTH // 2 - 120, HEIGHT // 2))
 
+def show_start_screen():
+    title_text = game_over_font.render("SPACE Odyssey", True, WHITE)
+    start_text = font.render("Press SPACE to Start", True, WHITE)
+
+    ship_x = -spaceship_img.get_width()  # Start off-screen to the left
+    ship_y = HEIGHT // 2 + 100           # Vertical position of the ship
+
+    waiting = True
+    while waiting:
+        clock.tick(60)
+        screen.blit(backgrounds[0], (0, 0))
+
+        # Draw title and start prompt
+        screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 2 - 100))
+        screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, HEIGHT // 2))
+
+        # Animate spaceship
+        screen.blit(spaceship_img, (ship_x, ship_y))
+        ship_x += 3
+        if ship_x > WIDTH:
+            ship_x = -spaceship_img.get_width()
+
+        pygame.display.flip()
+
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            waiting = False
+
 
 # Game loop
+show_start_screen()
 running = True
 while running:
     for event in pygame.event.get():
