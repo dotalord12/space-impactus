@@ -32,13 +32,16 @@ player_img = pygame.image.load("c:/xampp/htdocs/space_impact/spaceShips_004.png"
 player_img = pygame.transform.scale(player_img, (player_width, player_height))
 enemy_img = pygame.image.load("c:/xampp/htdocs/space_impact/Ship6.png").convert_alpha()
 enemy_img = pygame.transform.scale(enemy_img, (40, 30))
+enemy_img_level2 = pygame.image.load("c:/xampp/htdocs/space_impact/Ship1.png").convert_alpha()
+enemy_img_level2 = pygame.transform.scale(enemy_img_level2, (40, 30))
 bullet_img = pygame.image.load("c:/xampp/htdocs/space_impact/spaceMissiles_040.png").convert_alpha()
 bullet_img = pygame.transform.scale(bullet_img, (20, 10))
 boss_bullet_img = pygame.image.load("c:/xampp/htdocs/space_impact/laser.png").convert_alpha()
 boss_bullet_img = pygame.transform.scale(boss_bullet_img, (100, 10))  # Adjust the size as needed
 
-# Boss GIF frames
-boss_frames = [pygame.image.load("c:/xampp/htdocs/space_impact/alien.gif").convert_alpha() for _ in range(4)]
+# Boss GIF frames for both bosses
+boss_frames_level1 = [pygame.image.load("c:/xampp/htdocs/space_impact/alien.gif").convert_alpha() for _ in range(4)]
+boss_frames_level2 = [pygame.image.load("c:/xampp/htdocs/space_impact/alien2.gif").convert_alpha() for _ in range(4)]
 current_boss_frame = 0
 BOSS_ANIMATION_SPEED = 10
 
@@ -53,7 +56,7 @@ backgrounds = [pygame.transform.scale(bg, (WIDTH, HEIGHT)) for bg in backgrounds
 bullets = []
 bullet_speed = 5
 boss_bullets = []
-boss_bullet_speed = 8
+boss_bullet_speed = 10
 boss_shoot_timer = 0
 boss_shoot_delay = 60
 
@@ -65,8 +68,8 @@ spawn_delay = 30
 boss_active = False
 boss = None
 boss_hp = 0
-BOSS_VERTICAL_SPEED = 2  # Speed of boss's vertical movement
-BOSS_HORIZONTAL_SPEED = 1
+BOSS_VERTICAL_SPEED = 5  # Speed of boss's vertical movement
+BOSS_HORIZONTAL_SPEED = 3
 BOSS_SPAWN_SCORE = 10
 BOSS_WIDTH, BOSS_HEIGHT = 100, 80
 BOSS_SPEED = 1
@@ -102,12 +105,18 @@ def draw_boss_bullets():
 
 def draw_enemies():
     for enemy in enemies:
-        screen.blit(enemy_img, (enemy.x, enemy.y))
+        if level >= 2:
+            screen.blit(enemy_img_level2, (enemy.x, enemy.y))
+        else:
+            screen.blit(enemy_img, (enemy.x, enemy.y))
 
 
 def draw_boss():
     if boss:
-        screen.blit(boss_frames[current_boss_frame], (boss.x, boss.y))
+        if level == 1:
+            screen.blit(boss_frames_level1[current_boss_frame], (boss.x, boss.y))
+        else:
+            screen.blit(boss_frames_level2[current_boss_frame], (boss.x, boss.y))
         hp_text = font.render(f"Boss HP: {boss_hp}", True, WHITE)
         screen.blit(hp_text, (boss.x, boss.y - 30))
 
@@ -165,7 +174,7 @@ while running:
             spawn_timer += 1
             if spawn_timer >= spawn_delay and not boss_active:
                 enemy_y = random.randint(0, HEIGHT - 30)
-                enemy = pygame.Rect(WIDTH, enemy_y, 40, 30)
+                enemy = pygame.Rect(WIDTH, enemy_y, 50, 30)
                 enemies.append(enemy)
                 spawn_timer = 0
 
@@ -175,22 +184,21 @@ while running:
                     enemies.remove(enemy)
 
             if level == 1 and score > 0 and score % BOSS_SPAWN_SCORE == 0 and not boss_active:
-                boss = pygame.Rect(WIDTH, HEIGHT // 2 - BOSS_HEIGHT // 2, BOSS_WIDTH, BOSS_HEIGHT)
+                boss = pygame.Rect(WIDTH - 200, HEIGHT // 2 - BOSS_HEIGHT // 2, BOSS_WIDTH, BOSS_HEIGHT)
                 boss_hp = BOSS_HP_BASE + (level * 2)
                 boss_active = True
                 boss_spawned_this_level = True
 
-            if boss_active and boss:
-                # Boss vertical movement logic (up and down)
+            if level == 2 and score > 0 and score % BOSS_SPAWN_SCORE == 0 and not boss_active:
+                boss = pygame.Rect(WIDTH - 200, HEIGHT // 2 - BOSS_HEIGHT // 2, BOSS_WIDTH, BOSS_HEIGHT)
+                boss_hp = BOSS_HP_BASE + (level * 3)  # Boss HP increases with level
+                boss_active = True
+                boss_spawned_this_level = True
+
+            if boss_active and boss is not None:
                 boss.y += BOSS_VERTICAL_SPEED
                 if boss.y <= 0 or boss.y >= HEIGHT - BOSS_HEIGHT:
-                    BOSS_VERTICAL_SPEED = -BOSS_VERTICAL_SPEED  # Reverse direction
-
-                # Boss horizontal movement
-                boss.x -= BOSS_SPEED
-                if boss.x < -BOSS_WIDTH:
-                    boss_active = False
-                    boss = None
+                    BOSS_VERTICAL_SPEED *= -1
 
             player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
 
@@ -205,7 +213,7 @@ while running:
             if boss_active and boss:
                 boss_shoot_timer += 1
                 if boss_shoot_timer >= boss_shoot_delay:
-                     bullet_y = random.randint(boss.y, boss.y + BOSS_HEIGHT - 10)  # 10 is the bullet's height
+                     bullet_y = random.randint(boss.y, boss.y + BOSS_HEIGHT - 10)
                      boss_bullet = pygame.Rect(boss.x, bullet_y, 50, 5)
                      boss_bullets.append(boss_bullet)
                      boss_shoot_timer = 0
@@ -269,9 +277,20 @@ while running:
                 boss_active = False
                 boss = None
                 boss_hp = 0
+                if level == 2:
+                   enemy_speed = 5
+                
+
+        if score >= 50:
+            # Show a victory message or end the game
+            over_text = game_over_font.render("YOU WIN!", True, RED)
+            screen.blit(over_text, (WIDTH // 2 - 180, HEIGHT // 2 - 50))
+            pygame.display.flip()
+            pygame.time.wait(2000)  # Wait for 2 seconds before closing the game
+            running = False  # This ends the game loop
 
         if boss_active:
-            current_boss_frame = (current_boss_frame + 1) % len(boss_frames)
+            current_boss_frame = (current_boss_frame + 1) % len(boss_frames_level1 if level == 1 else boss_frames_level2)
 
         draw_player(player_x, player_y, sparkle=invincible and invincibility_timer % 10 < 5)
         draw_bullets()
